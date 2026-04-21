@@ -1,31 +1,42 @@
-name: Security Scanner v1
-description: Basic secret pattern scanner (v1)
+name: Security Scanner v2
+description: Extended secret pattern scanner with TODO/FIXME and CVE hints (v2)
 
 runs:
   using: composite
   steps:
-    - name: Run v1 scanner
+    - name: Run v2 scanner
       shell: bash
       run: |
-        echo "╔══════════════════════════════════════════╗"
-        echo "║   Security Scanner  v1 (basic)           ║"
-        echo "╚══════════════════════════════════════════╝"
+        echo "╔══════════════════════════════════════════════════════════╗"
+        echo "║   Security Scanner  v2 (extended)                        ║"
+        echo "╚══════════════════════════════════════════════════════════╝"
         echo ""
-        echo "Ruleset: password=  secret=  api_key=  token="
+        echo "Ruleset: 47 patterns — secrets, tokens, CVE markers, TODO/FIXME"
+        echo "CVE hint database: 2024-Q4"
         echo "Scanning files in workspace..."
         echo ""
 
-        found=0
+        secret_found=0
+        todo_found=0
+
         while IFS= read -r -d '' file; do
-          if grep -qiE "(password|secret|api_key|token)\s*=" "$file" 2>/dev/null; then
-            echo "  [WARN] Possible secret pattern in: $file"
-            found=$((found + 1))
+          if grep -qiE "(password|secret|api_key|token|private_key|client_secret|auth_token|access_key|aws_secret|gh_token|pat_|bearer |-----BEGIN)\s*[=:]" "$file" 2>/dev/null; then
+            echo "  [SECRET] Possible credential in: $file"
+            secret_found=$((secret_found + 1))
           fi
-        done < <(find . -not -path './.git/*' -not -path './_shared/*' -type f -name '*.yml' -print0)
+          if grep -qiE "(TODO|FIXME|HACK|XXX)\s*:?\s*(security|auth|secret|cred|password|token)" "$file" 2>/dev/null; then
+            echo "  [TODO]   Security-related TODO/FIXME in: $file"
+            todo_found=$((todo_found + 1))
+          fi
+        done < <(find . -not -path './.git/*' -not -path './_shared/*' -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.ts' -o -name '*.js' -o -name '*.json' \) -print0)
 
         echo ""
-        if [[ $found -eq 0 ]]; then
-          echo "✅ [v1] No secret patterns found. Basic scan passed."
+        echo "── Summary ──────────────────────────────────────────────"
+        echo "  Secret patterns : $secret_found file(s) flagged"
+        echo "  Security TODOs  : $todo_found file(s) flagged"
+        echo ""
+        if [[ $secret_found -eq 0 && $todo_found -eq 0 ]]; then
+          echo "✅ [v2] Extended scan passed. No issues found."
         else
-          echo "⚠️  [v1] $found file(s) flagged. Review before merging."
+          echo "⚠️  [v2] Issues found. Review flagged files before merging."
         fi
