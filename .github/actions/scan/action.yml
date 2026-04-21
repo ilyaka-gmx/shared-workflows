@@ -1,0 +1,31 @@
+name: Security Scanner v1
+description: Basic secret pattern scanner (v1)
+
+runs:
+  using: composite
+  steps:
+    - name: Run v1 scanner
+      shell: bash
+      run: |
+        echo "╔══════════════════════════════════════════╗"
+        echo "║   Security Scanner  v1 (basic)           ║"
+        echo "╚══════════════════════════════════════════╝"
+        echo ""
+        echo "Ruleset: password=  secret=  api_key=  token="
+        echo "Scanning files in workspace..."
+        echo ""
+
+        found=0
+        while IFS= read -r -d '' file; do
+          if grep -qiE "(password|secret|api_key|token)\s*=" "$file" 2>/dev/null; then
+            echo "  [WARN] Possible secret pattern in: $file"
+            found=$((found + 1))
+          fi
+        done < <(find . -not -path './.git/*' -not -path './_shared/*' -type f -name '*.yml' -print0)
+
+        echo ""
+        if [[ $found -eq 0 ]]; then
+          echo "✅ [v1] No secret patterns found. Basic scan passed."
+        else
+          echo "⚠️  [v1] $found file(s) flagged. Review before merging."
+        fi

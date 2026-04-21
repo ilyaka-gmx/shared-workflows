@@ -1,0 +1,38 @@
+name: Security Scan (reusable)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v4
+
+      - name: Get reusable workflow context
+        id: ctx
+        uses: ilyaka-gmx/reusable-workflow-context@v1
+
+      - name: Log self-identity
+        run: |
+          echo "Running shared security-scan workflow"
+          echo "  ref:  ${{ steps.ctx.outputs.workflow_ref }}"
+          echo "  sha:  ${{ steps.ctx.outputs.workflow_sha }}"
+          echo "  repo: ${{ steps.ctx.outputs.workflow_repository }}"
+          echo "  path: ${{ steps.ctx.outputs.workflow_path }}"
+
+      - name: Checkout shared-workflows at its own ref
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.ctx.outputs.workflow_repository }}
+          ref: ${{ steps.ctx.outputs.workflow_ref }}
+          path: _shared
+
+      - name: Run scanner
+        uses: ./_shared/.github/actions/scan
