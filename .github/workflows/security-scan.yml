@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout caller repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get reusable workflow context
         id: ctx
@@ -28,7 +28,7 @@ jobs:
           echo "  path: ${{ steps.ctx.outputs.workflow_path }}"
 
       - name: Checkout shared-workflows at its own ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ steps.ctx.outputs.workflow_repository }}
           ref: ${{ steps.ctx.outputs.workflow_ref }}
